@@ -176,7 +176,21 @@ fi
 # Ensure GIMP isn't currently running before installation
 case "$GIMP_SOURCE" in
 	flatpak)
-		if flatpak ps --columns=application | grep -Fxq -- "$GIMP_COMMAND"; then
+		flatpak_gimp_running=0
+
+		while read -r pid application; do
+			case "$pid" in ""|*[!0-9]*) continue ;;
+			esac
+
+			# kill -0 does not terminate a process, it merely performs a permission check on the PID
+			# meaning it effectively validates if the PID is currently running
+			if [ "$application" = "$GIMP_COMMAND" ] && kill -0 "$pid" 2>/dev/null; then
+				flatpak_gimp_running=1
+				break
+			fi
+		done < <(flatpak ps --columns=pid,application)
+
+		if [ "$flatpak_gimp_running" -eq 1 ]; then
 			echo ""
 			echo "GIMP is currently running"
 			echo "Please close GIMP before running the installer"
