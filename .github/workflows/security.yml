@@ -25,7 +25,9 @@ jobs:
           sudo apt-get install --yes clamav shellcheck
 
       - name: Update malware signatures
-        run: sudo freshclam
+        run: |
+          sudo systemctl stop clamav-freshclam.service || true
+          sudo freshclam
 
       - name: Scan repository for malware
         run: clamscan --recursive --infected --no-summary --exclude-dir='^./\.git$' .

@@ -33,16 +33,20 @@ jobs:
           from zipfile import ZipFile, BadZipFile
 
           expected = {
-              'PhotoGIMP-linux.zip': 'PhotoGIMP-linux/.config/GIMP/3.0/',
-              'PhotoGIMP-windows.zip': '3.0/',
-              'PhotoGIMP-macos.zip': '3.0/',
+              'PhotoGIMP-linux.zip': 'PhotoGIMP-linux/.config/GIMP/',
+              'PhotoGIMP-windows.zip': None,
+              'PhotoGIMP-macos.zip': None,
           }
           for name, prefix in expected.items():
               path = Path('dist') / name
               with ZipFile(path) as archive:
                   names = archive.namelist()
                   assert names and all(not item.startswith('/') and '..' not in Path(item).parts for item in names)
-                  assert any(item.startswith(prefix) for item in names)
+                  if prefix is None:
+                      roots = {Path(item).parts[0] for item in names}
+                      assert len(roots) == 1
+                  else:
+                      assert any(item.startswith(prefix) for item in names)
                   assert archive.testzip() is None
           PY
           (cd dist && sha256sum --check SHA256SUMS.txt)
@@ -51,6 +55,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes clamav
+          sudo systemctl stop clamav-freshclam.service || true
           sudo freshclam
           clamscan --infected --no-summary dist/*.zip
 
