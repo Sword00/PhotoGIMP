@@ -11,6 +11,12 @@ import sys
 AUTOMATION_ROOTS = (".github/", "scripts/")
 AGENT_NAMES = {"AGENTS.md", "CLAUDE.md", "GEMINI.md", "COPILOT.md"}
 SELF = "scripts/security_scan.py"
+FORBIDDEN_BINARY_SUFFIXES = {
+    ".exe", ".dll", ".so", ".dylib", ".bin", ".msi", ".dmg", ".pkg",
+    ".deb", ".rpm", ".appimage", ".jar", ".class", ".wasm", ".pyc",
+    ".pyo", ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2",
+    ".tbz2", ".xz", ".txz",
+}
 PROMPT_PATTERNS = re.compile(
     r"ignore\s+(all\s+)?previous\s+instructions|"
     r"reveal\s+(the\s+)?(system\s+prompt|secrets?|tokens?)|"
@@ -35,6 +41,9 @@ def scan() -> list[str]:
     findings: list[str] = []
     for name in tracked_files():
         path = Path(name)
+        if path.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES or ".so." in path.name.lower():
+            findings.append(f"{name}: tracked binary or packaged artifact is not allowed")
+            continue
         if name == SELF or not path.is_file() or path.stat().st_size > 1_000_000:
             continue
         is_agent_content = path.name in AGENT_NAMES

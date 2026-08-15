@@ -46,7 +46,7 @@ detect_gimp() {
 	fi
 
 	local IFS=:
-	local path_entries=($PATH)
+	read -r -a path_entries <<< "$PATH"
 	local path
 	local command
 	local command_version
@@ -156,7 +156,7 @@ if ! detect_gimp; then
 	exit 1
 fi
 
-if [ $(version $GIMP_VERSION) -lt $(version "3.0") ]; then
+if [ "$(version "$GIMP_VERSION")" -lt "$(version "3.0")" ]; then
 	echo ""
 	echo "Your version of GIMP $GIMP_VERSION is not supported."
 	echo "Please install GIMP 3.x, start it once, then run this script again."
